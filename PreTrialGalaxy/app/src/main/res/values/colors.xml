@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="arousal_green">#56cb47</color>
+    <color name="arousal_red">#c31e1e</color>
+    <color name="valence_blue">#3e79e7</color>
+    <color name="valence_yellow">#fffb00</color>
+</resources>

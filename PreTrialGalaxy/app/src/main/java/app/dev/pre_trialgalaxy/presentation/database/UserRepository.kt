@@ -9,6 +9,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 
+/*
+Repository to insert the data collected into the respective DAOs
+ */
 class UserRepository(db: UserDatabase) {
 
     val activeDao = db.getActiveMeasurementDao()

@@ -6,18 +6,21 @@ import androidx.health.services.client.HealthServices
 import androidx.health.services.client.MeasureCallback
 import androidx.health.services.client.PassiveListenerCallback
 import androidx.health.services.client.data.*
-import androidx.health.services.client.unregisterMeasureCallback
-import androidx.work.await
 import app.dev.pre_trialgalaxy.presentation.database.UserDataStore
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 
+/*
+The HealthManager is used to determine the capabilities of the smartwatch and to interact with the
+sensors.
+ */
+@Deprecated("This class and it's functions are no longer in use.",
+    ReplaceWith("Samsung Privileged Health SDK functionality"))
 class HealthManager(private val context: Context) {
     private val logTag = "HealthManager"
 
@@ -52,7 +55,8 @@ class HealthManager(private val context: Context) {
             //TODO DataPoint into Database
             val currentTime = LocalDateTime.now()
             heartRateMeasurements.add(data)
-            Log.v("ActiveData", "Received active Data: ${data.getData(activeDataType).size} at $currentTime")
+            Log.v("ActiveData", "Received active Data: " +
+                    "${data.getData(activeDataType).size} at $currentTime")
         }
     }
 

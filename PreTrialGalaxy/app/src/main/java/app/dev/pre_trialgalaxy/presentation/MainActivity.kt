@@ -1,6 +1,5 @@
 package app.dev.pre_trialgalaxy.presentation
 
-import android.Manifest
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -15,36 +14,41 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.sp
-import androidx.health.services.client.HealthServices
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import androidx.room.Room
 import androidx.wear.compose.material.*
 import androidx.wear.compose.material.dialog.*
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import app.dev.pre_trialgalaxy.R
 import app.dev.pre_trialgalaxy.presentation.database.UserDataStore
-import app.dev.pre_trialgalaxy.presentation.database.UserDatabase
 import app.dev.pre_trialgalaxy.presentation.database.entities.AffectData
 import app.dev.pre_trialgalaxy.presentation.database.entities.InteractionMeasurement
 import app.dev.pre_trialgalaxy.presentation.theme.PreTrialGalaxyTheme
 import java.time.LocalDateTime
-import kotlin.system.exitProcess
 
-//import com.samsung.android.eventsmonitor.EventBroadcastReceiver
-
+/*
+This class contains the main UI containing the navigation, design and logging of interaction
+timestamps.
+ */
 class MainActivity : ComponentActivity() {
 
+    /*
+    The ColorManagers is used to centrally manage the colors used in the Chips and Buttons.
+     */
     private val colorManager = ColorManager()
 
-    //TODO think about how to differentiate the smartwatches and databases the produce
-    private val databaseId : String = ""
-
-
-    //TODO set constant width for chips
+    /*
+     These five Arrays contain the affect-descriptors for and within each sector of the A-V-Model. For this
+     study the selection for each quadrant was translated to german, due to the study being held
+     and participated by germans.
+     */
+    private val quadrantDescriptors = arrayOf(
+        "Verärgert",
+        "Traurig",
+        "Glücklich",
+        "Entspannt"
+    )
     private val firstQuadrantWords = arrayOf(
         "Angespannt",
         "Frustriert",
@@ -70,20 +74,31 @@ class MainActivity : ComponentActivity() {
         "Ruhig"
     )
 
+    /*
+    Initialized Parameters that will be later overwritten with the data collected. If the data
+    collection failed, these values would be logged.
+     */
     private var notificationTimeId: Long = -1
     private var engagementTime: String = "No time."
     private var completionTime: String = "No time."
 
+    /*
+    As soon as the activity is called by the user interacting with the notification, the timestamp
+    marking the beginning of the interaction is taken as well as the timestamp when the notification
+    was clicked.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         engagementTime = LocalDateTime.now().toString()
         notificationTimeId = intent.getLongExtra("NotificationTimeId", -1)
-        //HealthManager(applicationContext).startHeartRateMeasurements()
         super.onCreate(savedInstanceState)
         setContent {
             AppNavHost()
         }
     }
 
+    /*
+    The AppNavHost provides all the navigation endpoints.
+    */
     @Composable
     fun AppNavHost(
         navController: NavHostController = rememberSwipeDismissableNavController(),
@@ -91,92 +106,6 @@ class MainActivity : ComponentActivity() {
     ) {
         NavHost(navController = navController, startDestination = startDestination) {
             composable(startDestination) {
-                QuadrantQuestion(
-                    onNavigateToFirstQuestion = { navController.navigate("first_quadrant") },
-                    onNavigateToSecondQuestion = { navController.navigate("second_quadrant") },
-                    onNavigateToThirdQuestion = { navController.navigate("third_quadrant") },
-                    onNavigateToFourthQuestion = { navController.navigate("fourth_quadrant") }
-                )
-            }
-
-
-            // First Prototype
-            composable("first_prototype") {
-                FirstPrototypeArousal(onNavigateToFirstValence = { navController.navigate("first_valence") })
-            }
-            composable("first_valence") {
-                FirstPrototypeValence(onNavigateToPicker = { navController.navigate("picker") })
-            }
-
-            // Second Prototype
-            composable("second_prototype") {
-                SecondPrototypeArousal(onNavigateToSecondPrototypeValence = {
-                    navController.navigate(
-                        "second_valence"
-                    )
-                })
-            }
-            composable("second_valence") {
-                SecondPrototypeValence(onNavigateToPicker = { navController.navigate("picker") })
-            }
-
-            // Third Prototype
-            composable("third_prototype") {
-                ThirdPrototypeArousal(onNavigateToThirdValence = { navController.navigate("third_valence") })
-            }
-
-            composable("third_valence") {
-                ThirdPrototypeValence(onNavigateToConfirmation = { navController.navigate("confirmation") })
-            }
-
-            // Fourth Prototype
-            composable("fourth_prototype") {
-                ForthPrototype(onNavigateToConfirmation = { navController.navigate("confirmation") })
-            }
-
-
-            // REVISED PROTOTYPES START HERE
-            // Fifth Prototype
-            composable("question_fifth") {
-                QuestionScreenEmoji(onNavigateToFourthPrototypeRevised = { navController.navigate("fifth_prototype") })
-            }
-
-            //composable("fifth_prototype") {
-            //    QuadrantQuestion(onNavigateToConfirmation = { navController.navigate("confirmation") })
-            //}
-
-            // First Prototype Revised
-            composable("question_arousal") {
-                QuestionScreenArousal(onNavigateToFirstPrototypeRevised = { navController.navigate("first_prototype_revised") })
-            }
-
-            composable("first_prototype_revised") {
-                FirstPrototypeArousalRevised(onNavigateToFirstValenceRevised = {
-                    navController.navigate(
-                        "question_valence"
-                    )
-                })
-            }
-
-            composable("question_valence") {
-                QuestionScreenValence(onNavigateToFirstValenceRevised = { navController.navigate("first_valence_revised") })
-            }
-
-            composable("first_valence_revised") {
-                FirstPrototypeValenceRevised(onNavigateToPicker = { navController.navigate("picker") })
-            }
-
-            // Fourth Prototype Revised
-            composable("question_emoji") {
-                QuestionScreenEmoji(onNavigateToFourthPrototypeRevised = { navController.navigate("fourth_prototype_revised") })
-            }
-            composable("fourth_prototype_revised") {
-                ForthPrototypeRevised(onNavigateToConfirmation = { navController.navigate("confirmation") })
-            }
-
-
-            //FINAL NAVIGATION TREE
-            composable("quadrant_question") {
                 QuadrantQuestion(
                     onNavigateToFirstQuestion = { navController.navigate("first_quadrant") },
                     onNavigateToSecondQuestion = { navController.navigate("second_quadrant") },
@@ -197,677 +126,16 @@ class MainActivity : ComponentActivity() {
                 FourthQuadrantQuestion(onNavigateToConfirmation = { navController.navigate("confirmation") })
             }
 
-
-            composable("picker") {
-                MyPicker(onNavigateToConfirmation = { navController.navigate("confirmation") })
-            }
-
             composable("confirmation") {
                 ConfirmationScreen()
             }
         }
     }
 
-    @Composable
-    fun WearApp(
-        onNavigateToFirstPrototypeRevised: () -> Unit,
-        onNavigateToFourthPrototypeRevised: () -> Unit,
-        onNavigateToFifthPrototype: () -> Unit
-    ) {
-        PreTrialGalaxyTheme {
-            ScalingLazyColumn(
-                autoCentering = AutoCenteringParams(itemIndex = 1),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                item {
-                    ListHeader {
-                        Text(
-                            text = "Select the UI Prototype"
-                        )
-                    }
-                }
-
-                item {
-                    Chip(
-                        label = {
-                            Text(text = "First Prototype")
-                        },
-                        onClick = {}
-                    )
-                }
-
-                item {
-                    Chip(
-                        label = {
-                            Text(text = "Fourth Prototype")
-                        },
-                        onClick = {}
-                    )
-                }
-
-                item {
-                    Chip(
-                        label = {
-                            Text(text = "Fifth Prototype")
-                        },
-                        onClick = {}
-                    )
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun FirstPrototypeArousal(onNavigateToFirstValence: () -> Unit) {
-        var stepperValue by remember { mutableStateOf(0) }
-        val minProgression = -5
-        val maxProgression = 5
-        val progression = minProgression..maxProgression
-        val colorManager = ColorManager()
-        PreTrialGalaxyTheme {
-            Stepper(
-                value = stepperValue,
-                onValueChange = { stepperValue = it },
-                valueProgression = progression,
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") }
-            )
-            {
-                Chip(
-                    label = {
-                        Text(
-                            text = stringResource(R.string.arousal_question),
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    secondaryLabel = {
-                        Text(
-                            text = "Weiter",
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    onClick = onNavigateToFirstValence,
-                    modifier = Modifier
-                        .width(175.dp)
-                        .fillMaxHeight()
-                )
-            }
-            CircularProgressIndicator(
-                progress = (0.5 + (0.5F / maxProgression.toFloat()) * stepperValue).toFloat(),
-                modifier = Modifier.fillMaxSize(),
-                startAngle = (90 / maxProgression) * (stepperValue.toFloat() * -1),
-                strokeWidth = 15.dp,
-                indicatorColor = colorManager.getPositiveArousalCircularColor()
-            )
-        }
-    }
-
-    @Composable
-    fun FirstPrototypeValence(onNavigateToPicker: () -> Unit) {
-        var stepperValue by remember { mutableStateOf(0) }
-        val minProgression = -5
-        val maxProgression = 5
-        val progression = minProgression..maxProgression
-        val colorManager = ColorManager()
-        PreTrialGalaxyTheme {
-            Stepper(
-                value = stepperValue,
-                onValueChange = { stepperValue = it },
-                valueProgression = progression,
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") }
-            ) {
-                Chip(
-                    label = {
-                        Text(
-                            text = stringResource(R.string.valence_question),
-                            textAlign = TextAlign.Center,
-                            fontSize = 12.sp
-                        )
-                    },
-                    secondaryLabel = {
-                        Text(
-                            text = "Weiter",
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    onClick = onNavigateToPicker,
-                    modifier = Modifier
-                        .width(175.dp)
-                        .fillMaxHeight()
-                )
-            }
-            CircularProgressIndicator(
-                progress = (0.5 + (0.5F / maxProgression.toFloat()) * stepperValue).toFloat(),
-                modifier = Modifier.fillMaxSize(),
-                startAngle = (90 / maxProgression) * (stepperValue.toFloat() * -1),
-                strokeWidth = 15.dp,
-                indicatorColor = colorManager.getPassiveValenceCircularColor()
-            )
-        }
-    }
-
-    @Composable
-    fun SecondPrototypeArousal(onNavigateToSecondPrototypeValence: () -> Unit) {
-        val colorManager = ColorManager()
-        PreTrialGalaxyTheme {
-            ScalingLazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                userScrollEnabled = false,
-                autoCentering = AutoCenteringParams(itemIndex = 1, itemOffset = 1)
-            ) {
-                item {
-                    Text(text = "Wie fühlst du dich?")
-                }
-                item {
-                    Chip(
-                        label = { Text(text = "Gut") },
-                        onClick = onNavigateToSecondPrototypeValence,
-                        colors = colorManager.getPositiveChipColor()
-                    )
-                }
-                item {
-                    Chip(
-                        label = { Text(text = "Schlecht") },
-                        onClick = onNavigateToSecondPrototypeValence,
-                        colors = colorManager.getNegativeChipColor()
-                    )
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun SecondPrototypeValence(onNavigateToPicker: () -> Unit) {
-        val colorManager = ColorManager()
-        PreTrialGalaxyTheme {
-            ScalingLazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                userScrollEnabled = false,
-                autoCentering = AutoCenteringParams(itemIndex = 1)
-            ) {
-                item {
-                    Text(text = "Wie aktiv fühlst du dich?")
-                }
-                item {
-                    Chip(
-                        label = { Text(text = "Aktiv") },
-                        onClick = onNavigateToPicker,
-                        colors = colorManager.getActiveChipColor()
-                    )
-                }
-                item {
-                    Chip(
-                        label = { Text(text = "Passiv") },
-                        onClick = onNavigateToPicker,
-                        colors = colorManager.getPassiveChipColor()
-                    )
-                }
-            }
-        }
-    }
-
-
-    //Pickers
-    @Composable
-    fun ThirdPrototypeArousal(onNavigateToThirdValence: () -> Unit) {
-        val colorManager = ColorManager()
-        PreTrialGalaxyTheme {
-            val arousalValues = listOf(3, 2, 1, 0, -1, -2, -3)
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Picker(
-                    state = PickerState(
-                        initialNumberOfOptions = arousalValues.size,
-                        initiallySelectedOption = arousalValues.size / 2,
-                        repeatItems = false
-                    ),
-                    modifier = Modifier.size(150.dp, 150.dp),
-                    contentDescription = "Picker for Arousal"
-                ) {
-                    Text(text = arousalValues[it].toString(), fontSize = 40.sp)
-
-                }
-
-                Spacer(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(0.5f)
-                )
-
-                Button(
-                    onClick = onNavigateToThirdValence,
-                    colors = colorManager.getPositiveArousalButtonColor()
-                ) {
-                    Text(text = "Weiter")
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun ThirdPrototypeValence(onNavigateToConfirmation: () -> Unit) {
-        val colorManager = ColorManager()
-        PreTrialGalaxyTheme {
-            val arousalValues = listOf(3, 2, 1, 0, -1, -2, -3)
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Picker(
-                    state = PickerState(
-                        initialNumberOfOptions = arousalValues.size,
-                        initiallySelectedOption = arousalValues.size / 2,
-                        repeatItems = false
-                    ),
-                    modifier = Modifier.size(150.dp, 150.dp),
-                    contentDescription = "Picker for Valence"//,
-
-                ) {
-                    Text(
-                        text = arousalValues[it].toString(),
-                        fontSize = 40.sp
-                    )
-                }
-
-                Spacer(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(0.5f)
-                )
-
-                Button(
-                    onClick = onNavigateToConfirmation,
-                    colors = colorManager.getPassiveValenceButtonColor()
-                ) {
-                    Text(text = "Weiter")
-                }
-            }
-        }
-    }
-
-    //Emoji
-    @Composable
-    fun ForthPrototype(onNavigateToConfirmation: () -> Unit) {
-        PreTrialGalaxyTheme {
-            ScalingLazyColumn(
-                autoCentering = AutoCenteringParams(itemIndex = 2),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                item {
-                    ListHeader {
-                        Text(
-                            text = "Wie fühlst du dich gerade?",
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.confused
-                                    ),
-                                    contentDescription = "Confused Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.width(width = 5.dp))
-
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.crying
-                                    ),
-                                    contentDescription = "Crying Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-                    }
-                }
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.furious
-                                    ),
-                                    contentDescription = "Furious Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.width(width = 5.dp))
-
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.happy
-                                    ),
-                                    contentDescription = "Happy Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-                    }
-                }
-
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.laughing
-                                    ),
-                                    contentDescription = "Laughing Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.width(width = 5.dp))
-
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.sad
-                                    ),
-                                    contentDescription = "Sad Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun FirstPrototypeArousalRevised(onNavigateToFirstValenceRevised: () -> Unit) {
-        var stepperValue by remember { mutableStateOf(0) }
-        val minProgression = -3
-        val maxProgression = 3
-        val progression = minProgression..maxProgression
-        val colorManager = ColorManager()
-        PreTrialGalaxyTheme {
-            Stepper(
-                value = stepperValue,
-                onValueChange = { stepperValue = it },
-                valueProgression = progression,
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") }
-            )
-            {
-                Chip(
-                    label = {
-                        Text(
-                            text = "Weiter",
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_baseline_arrow_forward_ios_24),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    onClick = onNavigateToFirstValenceRevised,
-                    modifier = Modifier
-                        .width(175.dp)
-                        .fillMaxHeight()
-                )
-            }
-            CircularProgressIndicator(
-                progress = (0.5 + (0.5F / maxProgression.toFloat()) * stepperValue).toFloat(),
-                modifier = Modifier.fillMaxSize(),
-                startAngle = (90 / maxProgression) * (stepperValue.toFloat() * -1),
-                strokeWidth = 15.dp,
-                indicatorColor = colorManager.getPositiveArousalCircularColor()
-            )
-        }
-    }
-
-    @Composable
-    fun FirstPrototypeValenceRevised(onNavigateToPicker: () -> Unit) {
-        var stepperValue by remember { mutableStateOf(0) }
-        val minProgression = -3
-        val maxProgression = 3
-        val progression = minProgression..maxProgression
-        val colorManager = ColorManager()
-        PreTrialGalaxyTheme {
-            Stepper(
-                value = stepperValue,
-                onValueChange = { stepperValue = it },
-                valueProgression = progression,
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") }
-            ) {
-                Chip(
-                    label = {
-                        Text(
-                            text = "Weiter",
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_baseline_arrow_forward_ios_24),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    onClick = onNavigateToPicker,
-                    modifier = Modifier
-                        .width(175.dp)
-                        .fillMaxHeight()
-                )
-            }
-            CircularProgressIndicator(
-                progress = (0.5 + (0.5F / maxProgression.toFloat()) * stepperValue).toFloat(),
-                modifier = Modifier.fillMaxSize(),
-                startAngle = (90 / maxProgression) * (stepperValue.toFloat() * -1),
-                strokeWidth = 15.dp,
-                indicatorColor = colorManager.getPassiveValenceCircularColor()
-            )
-        }
-    }
-
-    @Composable
-    fun ForthPrototypeRevised(onNavigateToConfirmation: () -> Unit) {
-        PreTrialGalaxyTheme {
-            ScalingLazyColumn(
-                autoCentering = AutoCenteringParams(itemIndex = 1),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.happy
-                                    ),
-                                    contentDescription = "Happy Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.width(width = 5.dp))
-
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.laughing
-                                    ),
-                                    contentDescription = "Laughing Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-                    }
-                }
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.annoyed
-                                    ),
-                                    contentDescription = "Annoyed Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.width(width = 5.dp))
-
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.confused
-                                    ),
-                                    contentDescription = "Confused Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-                    }
-                }
-
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.sad
-                                    ),
-                                    contentDescription = "Sad Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.width(width = 5.dp))
-
-                        Chip(
-                            label = {},
-                            onClick = onNavigateToConfirmation,
-                            icon = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = R.drawable.tense
-                                    ),
-                                    contentDescription = "Tense Emoji",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(align = Alignment.Center),
-                                    tint = Color.Unspecified
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-
+    /*
+    This is the first screen that is reached after clicking the notification. It provides the
+    broadest overview of the A-V-Model and the sectors.
+     */
     @Composable
     fun QuadrantQuestion(
         onNavigateToFirstQuestion: () -> Unit,
@@ -890,7 +158,7 @@ class MainActivity : ComponentActivity() {
                         onClick = onNavigateToFirstQuestion,
                         icon = {
                             Text(
-                                text = "Verärgert",
+                                text = quadrantDescriptors[0],
                                 modifier = Modifier.wrapContentSize(Alignment.Center)
                             )
                         },
@@ -902,7 +170,7 @@ class MainActivity : ComponentActivity() {
                         onClick = onNavigateToThirdQuestion,
                         icon = {
                             Text(
-                                text = "Traurig",
+                                text = quadrantDescriptors[1],
                                 modifier = Modifier.wrapContentSize(Alignment.Center)
                             )
                         },
@@ -910,7 +178,7 @@ class MainActivity : ComponentActivity() {
                         colors = colorManager.getPassiveChipColor()
                     )
                 }
-                Column() {
+                Column {
                     Spacer(modifier = Modifier.width(10.dp))
                 }
                 Column(
@@ -923,7 +191,7 @@ class MainActivity : ComponentActivity() {
                         onClick = onNavigateToSecondQuestion,
                         icon = {
                             Text(
-                                text = "Glücklich",
+                                text = quadrantDescriptors[2],
                                 modifier = Modifier.wrapContentSize(Alignment.Center)
                             )
                         },
@@ -935,7 +203,7 @@ class MainActivity : ComponentActivity() {
                         onClick = onNavigateToFourthQuestion,
                         icon = {
                             Text(
-                                text = "Entspannt",
+                                text = quadrantDescriptors[3],
                                 modifier = Modifier.wrapContentSize(Alignment.Center),
                                 color = Color.Black
                             )
@@ -947,15 +215,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun insertAffect(id: Long, affect: String) {
-        UserDataStore
-            .getUserRepository(applicationContext)
-            .insertAffect(lifecycleScope,
-                AffectData(0, id, affect)) {
-                Log.v("success", "This actually worked")
-            }
-    }
-
+    /*
+    The next four functions are the separate screens for each quadrants. The spacings between the
+    Chips is optimized for the round screen of the Samsung Galaxy Wear 5 Pro.
+     */
+    // TODO Set fixed widths to the Chips to fit all the descriptors uniformly
     @Composable
     fun FirstQuadrantQuestion(onNavigateToConfirmation: () -> Unit) {
         val color = colorManager.getNegativeChipColor()
@@ -1000,7 +264,7 @@ class MainActivity : ComponentActivity() {
                         colors = color
                     )
                 }
-                Column() {
+                Column {
                     Spacer(modifier = Modifier.width(10.dp))
                 }
                 Column(
@@ -1304,152 +568,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @Composable
-    fun QuestionScreenEmoji(onNavigateToFourthPrototypeRevised: () -> Unit) {
-        var confirmationShowDialog by remember { mutableStateOf(true) }
-        PreTrialGalaxyTheme {
-            Dialog(
-                showDialog = confirmationShowDialog,
-                onDismissRequest = {
-                    confirmationShowDialog = false
-                    onNavigateToFourthPrototypeRevised()
-                }
-            ) {
-                Confirmation(
-                    onTimeout = {
-                        confirmationShowDialog = false
-                        onNavigateToFourthPrototypeRevised()
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.question_mark),
-                            contentDescription = stringResource(R.string.emoji_question),
-                            modifier = Modifier.size(48.dp)
-                        )
-                    },
-                    durationMillis = 1500
-                ) {
-                    Text(
-                        text = stringResource(R.string.emoji_question),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun QuestionScreenArousal(onNavigateToFirstPrototypeRevised: () -> Unit) {
-        var confirmationShowDialog by remember { mutableStateOf(true) }
-        PreTrialGalaxyTheme {
-            Dialog(
-                showDialog = confirmationShowDialog,
-                onDismissRequest = {
-                    confirmationShowDialog = false
-                    onNavigateToFirstPrototypeRevised()
-                }
-            ) {
-                Confirmation(
-                    onTimeout = {
-                        confirmationShowDialog = false
-                        onNavigateToFirstPrototypeRevised()
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.question_mark),
-                            contentDescription = stringResource(R.string.arousal_question),
-                            modifier = Modifier.size(48.dp)
-                        )
-                    },
-                    durationMillis = 1500
-                ) {
-                    Text(
-                        text = stringResource(R.string.arousal_question),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun QuestionScreenValence(onNavigateToFirstValenceRevised: () -> Unit) {
-        var confirmationShowDialog by remember { mutableStateOf(true) }
-        PreTrialGalaxyTheme {
-            Dialog(
-                showDialog = confirmationShowDialog,
-                onDismissRequest = {
-                    confirmationShowDialog = false
-                    onNavigateToFirstValenceRevised()
-                }
-            ) {
-                Confirmation(
-                    onTimeout = {
-                        confirmationShowDialog = false
-                        onNavigateToFirstValenceRevised()
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.question_mark),
-                            contentDescription = stringResource(R.string.valence_question),
-                            modifier = Modifier.size(48.dp)
-                        )
-                    },
-                    durationMillis = 1500
-                ) {
-                    Text(
-                        text = stringResource(R.string.valence_question),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun MyPicker(onNavigateToConfirmation: () -> Unit) {
-        PreTrialGalaxyTheme {
-            ScalingLazyColumn(
-                autoCentering = AutoCenteringParams(itemIndex = 0),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                item {
-                    Text(
-                        text = "Welches Wort beschreibt deine Gefühle am besten?",
-                        textAlign = TextAlign.Center
-                    )
-                }
-                item {
-                    Chip(
-                        label = { Text(text = "Euphorisch") },
-                        onClick = onNavigateToConfirmation
-                    )
-                }
-                item {
-                    Chip(
-                        label = { Text(text = "Glücklich") },
-                        onClick = onNavigateToConfirmation
-                    )
-                }
-                item {
-                    Chip(
-                        label = { Text(text = "Zufrieden") },
-                        onClick = onNavigateToConfirmation
-                    )
-                }
-            }
-        }
-    }
-
-    private fun insertInteraction() {
-        UserDataStore
-            .getUserRepository(applicationContext)
-            .insertInteractionMeasurement(lifecycleScope,
-                InteractionMeasurement(0, notificationTimeId, engagementTime, completionTime)) {
-                Log.v("interaction_measurement", "Interaction Time saved.")
-            }
-    }
-
+    /*
+    The final screen to act as a confirmation that all the user inputs have been processed and
+    saved.
+    At this point the interaction has concluded and the end-timestamp is taken.
+     */
     @Composable
     fun ConfirmationScreen() {
         completionTime = LocalDateTime.now().toString()
@@ -1459,7 +582,6 @@ class MainActivity : ComponentActivity() {
                 showDialog = confirmationShowDialog,
                 onDismissRequest = {
                     insertInteraction()
-                    //HealthManager(applicationContext).stopHeartRateMeasurements()
                     confirmationShowDialog = false
                     finish()
                 }
@@ -1467,7 +589,6 @@ class MainActivity : ComponentActivity() {
                 Confirmation(
                     onTimeout = {
                         insertInteraction()
-                        //HealthManager(applicationContext).stopHeartRateMeasurements()
                         confirmationShowDialog = false
                         finish()
                     },
@@ -1487,5 +608,24 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun insertAffect(id: Long, affect: String) {
+        UserDataStore
+            .getUserRepository(applicationContext)
+            .insertAffect(lifecycleScope,
+                AffectData(0, id, affect)) {
+                Log.v("success", "This actually worked")
+            }
+    }
+
+
+    private fun insertInteraction() {
+        UserDataStore
+            .getUserRepository(applicationContext)
+            .insertInteractionMeasurement(lifecycleScope,
+                InteractionMeasurement(0, notificationTimeId, engagementTime, completionTime)) {
+                Log.v("interaction_measurement", "Interaction Time saved.")
+            }
     }
 }

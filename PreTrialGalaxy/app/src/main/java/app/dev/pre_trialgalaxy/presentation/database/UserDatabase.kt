@@ -4,6 +4,9 @@ import androidx.room.*
 import app.dev.pre_trialgalaxy.presentation.database.daos.*
 import app.dev.pre_trialgalaxy.presentation.database.entities.*
 
+/*
+The Database handles all the classes and methods that interact with the database.
+ */
 @Database(version = 5,
     entities = [ActiveMeasurement::class,
         InteractionMeasurement::class,

@@ -12,12 +12,18 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import app.dev.pre_trialgalaxy.R
 
+/*
+This class handles the notifications and the channel through which they are sent.
+ */
 class NotificationManager(private val context: Context) {
 
     private val channelId = "primary_notification_channel"
     private val channelName = "Primary Notification Channel"
     private val channelDescription = "This channel shall handle all the prompt-notifications for the user"
 
+    /*
+    This function sends out the notification to ask the user about his current affect.
+     */
     fun promptNotification(notificationTimeId: Long) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
@@ -56,10 +62,5 @@ class NotificationManager(private val context: Context) {
         }
         val notificationManager: NotificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(notificationChannel)
-    }
-
-    //TODO Method to cancel the notification
-    fun cancelNotification() {
-
     }
 }

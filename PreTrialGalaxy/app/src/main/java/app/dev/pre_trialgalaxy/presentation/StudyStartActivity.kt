@@ -8,30 +8,26 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.*
 import androidx.work.*
 import app.dev.pre_trialgalaxy.presentation.database.UserDataStore
 import app.dev.pre_trialgalaxy.presentation.database.entities.StudyData
 import app.dev.pre_trialgalaxy.presentation.theme.PreTrialGalaxyTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
-/*  facilitating the start (pause) and end buttons for the survey. Will initialize the WorkRequests,
-    the DB and the listeners to the active and passive healthdata streams.
-    Afterwards it will start the first prompt-cycle and close.
-    When the stop button is hit, the Listeners will be disengaged,
-    (the data will be copied into another DB?) and the WorkRequests will be stopped.
-    On the next Screen, stats about the participant will be shown, e.g. how often he interacted with
-    the prompts.
+/*
+The StudyStartActivity is meant as an admin-panel for the conductors of the study to start and stop
+the collection of data and sending of notifications. It is access through the app-icon (whereas the
+MainActivity is only accessed using the notification).
  */
 
 class StudyStartActivity : ComponentActivity() {
 
+    /*
+    The permissions necessary to run the data collection and the notifications are listed here.
+     */
     private val requestedPermissions = arrayOf(
         Manifest.permission.BODY_SENSORS,
         Manifest.permission.FOREGROUND_SERVICE,
@@ -41,10 +37,21 @@ class StudyStartActivity : ComponentActivity() {
         Manifest.permission.WAKE_LOCK
     )
 
+    /*
+    The promptFrequency used by the periodicWorker to prompt the notification. The minimum required
+    by the Worker is 15 minutes.
+
+    NOTE: This is not an exact time when the notification gets sent! After the time set the work
+    only gets scheduled and execution depends on the WearOS scheduler.
+     */
     private val promptFrequency = 15L
     private val promptFrequencyTimeUnit = TimeUnit.MINUTES
 
-    //TODO adjust initialDelay before study
+    /*
+    The initial time until the periodicWorker is first called is set here. A initial delay of one
+    minute was chosen to accustom the study participants to the UI and the functionality right after
+    they first put on the smartwatch and the study was started.
+     */
     private val initialDelay = 1L
     private val periodicWorkRequest = PeriodicWorkRequestBuilder<NotificationWorker>(
         promptFrequency,
@@ -62,6 +69,14 @@ class StudyStartActivity : ComponentActivity() {
         }
     }
 
+    /*
+    This defines the screen to start and stop the study and the collection of data.
+
+    Note: It was found that during the in-the-field study, the visual feedback on button presses
+    were not enough to be sure the study has started. A colored background or a screen like the
+    ConfirmationScreen in MainActivity could be used to signal the status of the study and changes
+    in it.
+     */
     @Composable
     fun StudyStartApp() {
         //TODO add confirmation screens/change button colors depending on state
@@ -95,6 +110,10 @@ class StudyStartActivity : ComponentActivity() {
         }
     }
 
+    /*
+    The initialization of the study. This cancels of stops every action as well to make multiple
+    presses not start multiple instances. Also the starting timestamp of the study is logged.
+     */
     private fun initializeStudy() {
         WorkManager.getInstance(this).cancelAllWork()
         WorkManager.getInstance(this).enqueue(periodicWorkRequest)
@@ -109,6 +128,9 @@ class StudyStartActivity : ComponentActivity() {
 
     }
 
+    /*
+    The study is ended by stopping the Work manager and collecting the timestamp of the end.
+     */
     fun stopStudy() {
         WorkManager.getInstance(this).cancelAllWork()
         UserDataStore

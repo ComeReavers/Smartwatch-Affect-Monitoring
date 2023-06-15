@@ -5,6 +5,10 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+/*
+To create and get the database instance the UserDataStore centrally opens and closes connections to
+the database and returns those.
+ */
 object UserDataStore {
 
     private var roomDb: UserDatabase? = null
